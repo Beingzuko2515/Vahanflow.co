@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VahanFlow ERP - Multi-Table Manager</title>
+    <title>VahanFlow ERP - Fleet & Logistics Management</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons CDN -->
@@ -61,12 +61,13 @@
                     <input type="password" id="loginPass" required placeholder="Enter password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
                 </div>
                 
-                <!-- REMEMBER ME CHECKBOX -->
+                <!-- REMEMBER ME & FORGOT PASSWORD -->
                 <div class="flex items-center justify-between text-xs pt-1">
                     <label class="flex items-center space-x-2 cursor-pointer text-slate-400 hover:text-slate-200">
                         <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-slate-950">
-                        <span>Remember me on this device</span>
+                        <span>Remember me</span>
                     </label>
+                    <button type="button" onclick="openForgotModal()" class="text-orange-400 font-semibold hover:underline">Forgot Password?</button>
                 </div>
 
                 <div id="authError" class="text-xs text-rose-500 hidden font-semibold"></div>
@@ -226,11 +227,9 @@
 
         <!-- FOOTER WITH ANIMATED MOVING TRUCK -->
         <footer class="bg-black border-t-2 border-orange-500/40 relative overflow-hidden mt-8 sm:mt-12">
-            <!-- Road surface with animation -->
             <div class="w-full h-1 bg-slate-800"></div>
             <div class="w-full h-1 road-bg"></div>
 
-            <!-- Moving Truck Container -->
             <div class="relative w-full h-10 sm:h-12 flex items-center overflow-hidden">
                 <div class="absolute left-0 animate-truck flex items-center space-x-2 text-orange-500">
                     <i class="fa-solid fa-truck-moving text-xl sm:text-2xl drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]"></i>
@@ -244,7 +243,33 @@
         </footer>
     </div>
 
-    <!-- MODAL 1: CREATE TABLE MODAL -->
+    <!-- MODAL 1: FORGOT PASSWORD MODAL -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-950 rounded-2xl shadow-2xl border border-orange-500/30 w-full max-w-md p-5 sm:p-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-key mr-2 text-orange-500"></i> Reset Password</h3>
+                <button onclick="closeForgotModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handlePasswordReset(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Username *</label>
+                    <input type="text" id="resetUser" required placeholder="Enter account username" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">New Password *</label>
+                    <input type="password" id="resetNewPass" required placeholder="Enter new password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                </div>
+                <div id="resetError" class="text-xs text-rose-500 hidden font-semibold"></div>
+                <div id="resetSuccess" class="text-xs text-emerald-400 hidden font-semibold"></div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeForgotModal()" class="px-4 py-2 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-orange-500 hover:bg-orange-400 text-black font-bold rounded-xl shadow-lg shadow-orange-500/20">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CREATE TABLE MODAL -->
     <div id="createTableModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-950 rounded-2xl shadow-2xl border border-orange-500/30 w-full max-w-md p-5 sm:p-6">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
@@ -268,7 +293,7 @@
         </div>
     </div>
 
-    <!-- MODAL 2: ADD / EDIT ENTRY FORM MODAL -->
+    <!-- MODAL 3: ADD / EDIT ENTRY FORM MODAL -->
     <div id="formModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-3 sm:p-4">
         <div class="bg-slate-950 rounded-2xl shadow-2xl border border-orange-500/30 w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
             <div class="bg-black text-white px-4 sm:px-6 py-3.5 flex justify-between items-center border-b border-orange-500/30">
@@ -461,6 +486,50 @@
             }
         }
 
+        /* --- FORGOT PASSWORD MODAL SYSTEM --- */
+        function openForgotModal() {
+            document.getElementById('resetUser').value = '';
+            document.getElementById('resetNewPass').value = '';
+            document.getElementById('resetError').classList.add('hidden');
+            document.getElementById('resetSuccess').classList.add('hidden');
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+            document.getElementById('forgotPasswordModal').classList.add('flex');
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+            document.getElementById('forgotPasswordModal').classList.remove('flex');
+        }
+
+        function handlePasswordReset(e) {
+            e.preventDefault();
+            const username = document.getElementById('resetUser').value.trim();
+            const newPass = document.getElementById('resetNewPass').value;
+            const errDiv = document.getElementById('resetError');
+            const succDiv = document.getElementById('resetSuccess');
+
+            errDiv.classList.add('hidden');
+            succDiv.classList.add('hidden');
+
+            const userIndex = users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
+
+            if (userIndex === -1) {
+                errDiv.innerText = "Username not found in system.";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            users[userIndex].password = newPass;
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+            succDiv.innerText = "Password reset successfully! Log in with new credentials.";
+            succDiv.classList.remove('hidden');
+
+            setTimeout(() => {
+                closeForgotModal();
+            }, 1800);
+        }
+
         function handleLogout() {
             currentUser = null;
             localStorage.removeItem(REMEMBER_KEY);
@@ -614,7 +683,7 @@
                 tables.push(importedTable);
                 saveUserTables();
                 alert(`Successfully imported table "${tableName}" with ${newEntries.length} entries!`);
-                event.target.value = ''; // Reset file input
+                event.target.value = '';
             } catch (err) {
                 alert("Error importing Excel file: " + err.message);
             }
