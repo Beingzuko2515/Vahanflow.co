@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VahanFlow ERP - Multi-Table Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ExcelJS CDN for Styled Excel Export & Import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <!-- FileSaver CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        /* Moving Truck Animation Keyframes */
+        @keyframes driveTruck {
+            0% { transform: translateX(-150%); }
+            100% { transform: translateX(100vw); }
+        }
+        .animate-truck {
+            animation: driveTruck 12s linear infinite;
+        }
+
+        /* Road Striping Animation */
+        @keyframes moveRoad {
+            0% { background-position: 0 0; }
+            100% { background-position: -40px 0; }
+        }
+        .road-bg {
+            background-image: linear-gradient(90deg, #f97316 50%, transparent 50%);
+            background-size: 40px 4px;
+            animation: moveRoad 0.8s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- AUTHENTICATION SCREEN -->
+    <div id="authScreen" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-950 rounded-2xl shadow-2xl border border-orange-500/30 w-full max-w-md p-6 sm:p-8 relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl"></div>
+            
+            <div class="text-center mb-6 relative">
+                <div class="bg-gradient-to-tr from-orange-600 to-amber-500 text-white w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-orange-500/30">
+                    <i class="fa-solid fa-truck-fast text-2xl sm:text-3xl"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-white tracking-wide">VAHAN<span class="text-orange-500">FLOW</span></h2>
+                <p id="authSubtitle" class="text-xs text-slate-400 mt-1">Enterprise Fleet & Transport Logistics</p>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Username</label>
+                    <input type="text" id="loginUser" required placeholder="Enter username" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                    <input type="password" id="loginPass" required placeholder="Enter password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+                </div>
+                
+                <!-- REMEMBER ME CHECKBOX -->
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <label class="flex items-center space-x-2 cursor-pointer text-slate-400 hover:text-slate-200">
+                        <input type="checkbox" id="rememberMe" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-slate-950">
+                        <span>Remember me on this device</span>
+                    </label>
+                </div>
+
+                <div id="authError" class="text-xs text-rose-500 hidden font-semibold"></div>
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-orange-600/30 transition duration-200">
+                    Login
+                </button>
+                <p class="text-center text-xs text-slate-400 mt-3">
+                    Don't have an account? <a href="#" onclick="toggleAuthMode('register')" class="text-orange-400 font-semibold hover:underline">Create Account</a>
+                </p>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Choose Username *</label>
+                    <input type="text" id="regUser" required placeholder="Create username" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Choose Password *</label>
+                    <input type="password" id="regPass" required placeholder="Create password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Confirm Password *</label>
+                    <input type="password" id="regPassConfirm" required placeholder="Re-enter password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
+                </div>
+                <div id="regError" class="text-xs text-rose-500 hidden font-semibold"></div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/30 transition duration-200">
+                    Create Account
+                </button>
+                <p class="text-center text-xs text-slate-400 mt-3">
+                    Already have an account? <a href="#" onclick="toggleAuthMode('login')" class="text-orange-400 font-semibold hover:underline">Log In</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP INTERFACE -->
+    <div id="appInterface" class="hidden flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-slate-950 border-b border-orange-500/20 px-4 sm:px-6 py-3.5 shadow-xl flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-orange-500 p-2 sm:p-2.5 rounded-xl shadow-lg shadow-orange-500/20 text-black">
+                    <i class="fa-solid fa-truck-fast text-lg sm:text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg sm:text-xl tracking-wider text-white leading-none">VAHAN<span class="text-orange-500">FLOW</span></h1>
+                    <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5">User: <span id="currentUserDisplay" class="text-orange-400 font-bold">--</span></p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="showHomeScreen()" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold px-3 py-2 sm:px-4 sm:py-2 rounded-xl border border-slate-700 transition flex items-center">
+                    <i class="fa-solid fa-house sm:mr-1.5 text-orange-400"></i> <span class="hidden sm:inline">Home</span>
+                </button>
+                <button onclick="handleLogout()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 text-xs font-semibold px-3 py-2 sm:px-4 sm:py-2 rounded-xl shadow transition">
+                    <i class="fa-solid fa-right-from-bracket sm:mr-1"></i> <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-grow p-3 sm:p-6 max-w-[1600px] mx-auto w-full">
+
+            <!-- 1. HOME SCREEN / TABLES DASHBOARD -->
+            <section id="homeScreenSection" class="space-y-4 sm:space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950/60 p-4 sm:p-6 rounded-2xl border border-orange-500/20 shadow-lg backdrop-blur-md">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-black text-white uppercase tracking-wider">Transport Tables Workspace</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Custom transport modules & trip registries</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                        <label class="flex-1 sm:flex-none cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-4 py-2.5 sm:py-3 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center transition">
+                            <i class="fa-solid fa-file-import mr-2 text-sm"></i> Import Excel Table
+                            <input type="file" id="excelImportInput" accept=".xlsx, .xls" onchange="importExcelTable(event)" class="hidden">
+                        </label>
+                        <button onclick="openCreateTableModal()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-black font-extrabold text-xs px-4 py-2.5 sm:py-3 rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center transition">
+                            <i class="fa-solid fa-plus-circle mr-2 text-sm"></i> Create New Table
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tables Grid -->
+                <div id="tablesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                    <!-- Dynamic Table Cards inserted here -->
+                </div>
+            </section>
+
+            <!-- 2. TABLE DETAILS & ENTRY SCREEN -->
+            <section id="tableDetailSection" class="hidden space-y-4 sm:space-y-6">
+                <!-- Top Navigation & Info -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950/60 p-4 sm:p-5 rounded-2xl border border-orange-500/20 shadow-lg backdrop-blur-md">
+                    <div class="flex items-center space-x-3">
+                        <button onclick="showHomeScreen()" class="p-2 sm:p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-orange-400 transition">
+                            <i class="fa-solid fa-arrow-left text-sm sm:text-base"></i>
+                        </button>
+                        <div>
+                            <h2 id="currentTableName" class="text-base sm:text-lg font-bold text-white">Table Name</h2>
+                            <p class="text-xs text-slate-400">Total Entries: <span id="currentTableCount" class="font-bold text-orange-400">0</span></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
+                        <button onclick="exportToExcel()" class="flex-1 sm:flex-none justify-center bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center transition">
+                            <i class="fa-solid fa-file-excel mr-2 text-sm"></i> Export Excel
+                        </button>
+                        <button onclick="openFormModal()" class="flex-1 sm:flex-none justify-center bg-orange-500 hover:bg-orange-400 text-black text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 flex items-center transition">
+                            <i class="fa-solid fa-plus-circle mr-2 text-sm"></i> Add Entry
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SEARCH AND FILTER BAR -->
+                <div class="bg-slate-950/70 p-3.5 sm:p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-md">
+                    <div class="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-2.5">
+                        <div class="relative w-full sm:max-w-md">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                            <input type="text" id="searchInput" onkeyup="renderTableEntries()" placeholder="Search vehicle, party, driver, LR, route..." class="w-full bg-slate-900 border border-slate-700 pl-9 pr-4 py-2 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500">
+                        </div>
+                        <select id="statusFilter" onchange="renderTableEntries()" class="bg-slate-900 border border-slate-700 text-xs text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-orange-500">
+                            <option value="ALL">All Status</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Unpaid">Unpaid</option>
+                        </select>
+                    </div>
+                    <button onclick="clearSearchFilters()" class="text-xs text-slate-400 hover:text-orange-400 flex items-center justify-center px-3 py-2 border border-slate-800 rounded-xl bg-slate-900 hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-rotate-right mr-1.5 text-[10px]"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Entries Table View (Mobile Scrollable) -->
+                <div class="bg-slate-950/80 rounded-2xl border border-slate-800 shadow-2xl overflow-x-auto -mx-1 sm:mx-0">
+                    <table class="w-full text-left text-xs border-collapse min-w-[900px]">
+                        <thead class="bg-black text-orange-400 uppercase text-[11px] tracking-wider border-b border-orange-500/30">
+                            <tr>
+                                <th class="p-3.5 font-bold">LR No</th>
+                                <th class="p-3.5 font-bold">Date</th>
+                                <th class="p-3.5 font-bold">Party Name</th>
+                                <th class="p-3.5 font-bold">Vehicle No</th>
+                                <th class="p-3.5 font-bold">Driver</th>
+                                <th class="p-3.5 font-bold">Route</th>
+                                <th class="p-3.5 font-bold text-right">Tons</th>
+                                <th class="p-3.5 font-bold text-right">Rate (₹)</th>
+                                <th class="p-3.5 font-bold text-right">Freight (₹)</th>
+                                <th class="p-3.5 font-bold text-right">Advance (₹)</th>
+                                <th class="p-3.5 font-bold text-right">Balance (₹)</th>
+                                <th class="p-3.5 font-bold text-center">Status</th>
+                                <th class="p-3.5 font-bold text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- FOOTER WITH ANIMATED MOVING TRUCK -->
+        <footer class="bg-black border-t-2 border-orange-500/40 relative overflow-hidden mt-8 sm:mt-12">
+            <!-- Road surface with animation -->
+            <div class="w-full h-1 bg-slate-800"></div>
+            <div class="w-full h-1 road-bg"></div>
+
+            <!-- Moving Truck Container -->
+            <div class="relative w-full h-10 sm:h-12 flex items-center overflow-hidden">
+                <div class="absolute left-0 animate-truck flex items-center space-x-2 text-orange-500">
+                    <i class="fa-solid fa-truck-moving text-xl sm:text-2xl drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]"></i>
+                    <span class="text-[10px] font-mono tracking-widest text-orange-400 uppercase font-bold">VahanFlow Express Delivery...</span>
+                </div>
+            </div>
+
+            <div class="py-2 text-center text-[10px] text-slate-500 bg-slate-950 border-t border-slate-900">
+                VahanFlow ERP © 2026 | Enterprise Logistics Solution
+            </div>
+        </footer>
+    </div>
+
+    <!-- MODAL 1: CREATE TABLE MODAL -->
+    <div id="createTableModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-950 rounded-2xl shadow-2xl border border-orange-500/30 w-full max-w-md p-5 sm:p-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-table mr-2 text-orange-500"></i> Create New Table</h3>
+                <button onclick="closeCreateTableModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleCreateTable(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Table Name *</label>
+                    <input type="text" id="newTableName" required placeholder="e.g. Tata Steel Trips, Local Deliveries" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Description (Optional)</label>
+                    <textarea id="newTableDesc" rows="2" placeholder="e.g. Route details and billing" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeCreateTableModal()" class="px-4 py-2 border border-slate-700 rounded-xl text-slate-300 hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-orange-500 hover:bg-orange-400 text-black font-bold rounded-xl shadow-lg shadow-orange-500/20">Create Table</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD / EDIT ENTRY FORM MODAL -->
+    <div id="formModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-3 sm:p-4">
+        <div class="bg-slate-950 rounded-2xl shadow-2xl border border-orange-500/30 w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+            <div class="bg-black text-white px-4 sm:px-6 py-3.5 flex justify-between items-center border-b border-orange-500/30">
+                <h3 id="formTitle" class="font-bold text-sm text-orange-400"><i class="fa-solid fa-plus mr-2"></i> Add Form Entry</h3>
+                <button onclick="closeFormModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="tripForm" onsubmit="handleFormSubmit(event)" class="p-4 sm:p-6 space-y-4 overflow-y-auto text-xs text-slate-300">
+                <input type="hidden" id="editRecordId">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-semibold mb-1">LR Number *</label>
+                        <input type="text" id="formLrNo" required class="w-full bg-slate-900 border border-slate-700 text-orange-400 rounded-xl px-3 py-2 outline-none font-mono font-bold" readonly>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Trip Date *</label>
+                        <input type="date" id="formDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Party Name *</label>
+                        <input type="text" id="formParty" placeholder="e.g. Tata Steel" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-semibold mb-1">Vehicle Number *</label>
+                        <input type="text" id="formVehicle" placeholder="e.g. UP12AT1234" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Driver Name</label>
+                        <input type="text" id="formDriver" placeholder="e.g. Ramesh Kumar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Material</label>
+                        <input type="text" id="formMaterial" placeholder="e.g. Iron Rods" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold mb-1">From Location</label>
+                        <input type="text" id="formFrom" placeholder="Source City" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">To Location</label>
+                        <input type="text" id="formTo" placeholder="Destination City" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                </div>
+
+                <div class="p-3.5 sm:p-4 bg-slate-900/60 border border-slate-800 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-semibold mb-1">Weight (MT) *</label>
+                        <input type="number" step="0.01" id="formTons" oninput="calculateTotals()" placeholder="0" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Rate per MT (₹) *</label>
+                        <input type="number" step="0.01" id="formRate" oninput="calculateTotals()" placeholder="0" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Total Freight (₹)</label>
+                        <input type="number" id="formTotalFreight" readonly class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-orange-400 font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block font-semibold mb-1">Advance Received (₹)</label>
+                        <input type="number" id="formAdvance" oninput="calculateTotals()" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Balance Due (₹)</label>
+                        <input type="number" id="formBalance" readonly class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-rose-400 font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Payment Status</label>
+                        <select id="formStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-orange-500">
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-2">
+                    <button type="button" onclick="closeFormModal()" class="px-4 py-2 border border-slate-700 rounded-xl font-semibold hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-orange-500 hover:bg-orange-400 text-black font-extrabold rounded-xl shadow-lg shadow-orange-500/20">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT ENGINE -->
+    <script>
+        const USERS_KEY = 'vahan_users';
+        const REMEMBER_KEY = 'vahan_remembered_user';
+        let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+        let currentUser = null;
+        let tables = []; 
+        let activeTableId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const rememberedUser = localStorage.getItem(REMEMBER_KEY);
+            if (rememberedUser && users.some(u => u.username.toLowerCase() === rememberedUser.toLowerCase())) {
+                currentUser = rememberedUser;
+                launchApp();
+            } else {
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('appInterface').classList.add('hidden');
+            }
+        });
+
+        function getUserTablesKey() {
+            return `vahan_tables_${currentUser.toLowerCase()}`;
+        }
+
+        function loadUserTables() {
+            if (!currentUser) return;
+            tables = JSON.parse(localStorage.getItem(getUserTablesKey())) || [];
+        }
+
+        function saveUserTables() {
+            if (!currentUser) return;
+            localStorage.setItem(getUserTablesKey(), JSON.stringify(tables));
+            renderHomeScreen();
+        }
+
+        /* --- AUTH SYSTEM --- */
+        function toggleAuthMode(mode) {
+            document.getElementById('authError').classList.add('hidden');
+            document.getElementById('regError').classList.add('hidden');
+            if (mode === 'register') {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+            } else {
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const user = document.getElementById('regUser').value.trim();
+            const pass = document.getElementById('regPass').value;
+            const passConfirm = document.getElementById('regPassConfirm').value;
+            const regError = document.getElementById('regError');
+
+            if (pass !== passConfirm) {
+                regError.innerText = "Passwords do not match!";
+                regError.classList.remove('hidden');
+                return;
+            }
+
+            if (users.some(u => u.username.toLowerCase() === user.toLowerCase())) {
+                regError.innerText = "Username already exists!";
+                regError.classList.remove('hidden');
+                return;
+            }
+
+            users.push({ username: user, password: pass });
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+            alert('Account created successfully!');
+            document.getElementById('registerForm').reset();
+            toggleAuthMode('login');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            const isRememberChecked = document.getElementById('rememberMe').checked;
+            const authError = document.getElementById('authError');
+
+            const validUser = users.find(u => u.username.toLowerCase() === user.toLowerCase() && u.password === pass);
+
+            if (validUser) {
+                currentUser = validUser.username;
+                
+                if (isRememberChecked) {
+                    localStorage.setItem(REMEMBER_KEY, currentUser);
+                } else {
+                    localStorage.removeItem(REMEMBER_KEY);
+                }
+
+                launchApp();
+            } else {
+                authError.innerText = "Invalid username or password.";
+                authError.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem(REMEMBER_KEY);
+            document.getElementById('appInterface').classList.add('hidden');
+            document.getElementById('appInterface').classList.remove('flex');
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        function launchApp() {
+            document.getElementById('currentUserDisplay').innerText = currentUser;
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appInterface').classList.remove('hidden');
+            document.getElementById('appInterface').classList.add('flex');
+            loadUserTables();
+            showHomeScreen();
+        }
+
+        /* --- HOME SCREEN / MULTI-TABLE MANAGEMENT --- */
+        function showHomeScreen() {
+            document.getElementById('homeScreenSection').classList.remove('hidden');
+            document.getElementById('tableDetailSection').classList.add('hidden');
+            activeTableId = null;
+            renderHomeScreen();
+        }
+
+        function renderHomeScreen() {
+            const grid = document.getElementById('tablesGrid');
+            if (tables.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-slate-950/40 border border-slate-800 p-8 sm:p-12 rounded-2xl text-center text-slate-500">
+                        <i class="fa-solid fa-folder-plus text-4xl sm:text-5xl mb-3 text-slate-700"></i>
+                        <h3 class="font-bold text-slate-400 text-sm sm:text-base">No transport tables created yet</h3>
+                        <p class="text-xs mt-1">Create a new table or import an Excel sheet to get started.</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = tables.map(t => `
+                <div class="bg-slate-950/80 rounded-2xl border border-slate-800 hover:border-orange-500/50 p-5 sm:p-6 transition duration-300 shadow-xl flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="bg-orange-500/10 text-orange-500 p-2.5 sm:p-3 rounded-xl border border-orange-500/20 font-bold text-lg sm:text-xl group-hover:bg-orange-500 group-hover:text-black transition duration-300">
+                                <i class="fa-solid fa-table"></i>
+                            </span>
+                            <button onclick="deleteTable('${t.id}')" title="Delete Table" class="text-slate-600 hover:text-rose-500 p-1 transition">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                        <h3 class="font-bold text-base sm:text-lg text-white group-hover:text-orange-400 transition">${t.name}</h3>
+                        <p class="text-xs text-slate-400 mt-1">${t.desc || 'No description provided'}</p>
+                    </div>
+
+                    <div class="border-t border-slate-800/80 pt-4 mt-5 flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-semibold">${t.entries.length} Entries</span>
+                        <button onclick="openTable('${t.id}')" class="bg-slate-900 hover:bg-orange-500 hover:text-black text-orange-400 text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-700 hover:border-orange-500 transition flex items-center">
+                            Open <i class="fa-solid fa-arrow-right ml-1.5 text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCreateTableModal() {
+            document.getElementById('newTableName').value = '';
+            document.getElementById('newTableDesc').value = '';
+            document.getElementById('createTableModal').classList.remove('hidden');
+            document.getElementById('createTableModal').classList.add('flex');
+        }
+
+        function closeCreateTableModal() {
+            document.getElementById('createTableModal').classList.add('hidden');
+            document.getElementById('createTableModal').classList.remove('flex');
+        }
+
+        function handleCreateTable(e) {
+            e.preventDefault();
+            const name = document.getElementById('newTableName').value.trim();
+            const desc = document.getElementById('newTableDesc').value.trim();
+
+            const newTable = {
+                id: 'tbl_' + Date.now(),
+                name: name,
+                desc: desc,
+                entries: []
+            };
+
+            tables.push(newTable);
+            saveUserTables();
+            closeCreateTableModal();
+        }
+
+        function deleteTable(id) {
+            if (confirm("Are you sure you want to delete this table and all its entries?")) {
+                tables = tables.filter(t => t.id !== id);
+                saveUserTables();
+            }
+        }
+
+        /* --- EXCEL TABLE IMPORT SYSTEM --- */
+        async function importExcelTable(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const workbook = new ExcelJS.Workbook();
+                const arrayBuffer = await file.arrayBuffer();
+                await workbook.xlsx.load(arrayBuffer);
+
+                const worksheet = workbook.worksheets[0];
+                if (!worksheet) return alert("Excel file is empty!");
+
+                const tableName = file.name.replace(/\.[^/.]+$/, "");
+                const newEntries = [];
+
+                worksheet.eachRow((row, rowNumber) => {
+                    if (rowNumber > 1) { // Skip Header Row
+                        const values = row.values;
+                        const tons = parseFloat(values[9]) || 0;
+                        const rate = parseFloat(values[10]) || 0;
+                        const freight = parseFloat(values[11]) || Math.round(tons * rate);
+                        const advance = parseFloat(values[12]) || 0;
+                        const balance = parseFloat(values[13]) || Math.round(freight - advance);
+
+                        newEntries.push({
+                            id: values[1] ? String(values[1]) : `LR-${1000 + rowNumber}`,
+                            date: values[2] ? String(values[2]) : new Date().toISOString().split('T')[0],
+                            party: values[3] ? String(values[3]) : 'Imported Party',
+                            vehicle: values[4] ? String(values[4]) : 'UNKNOWN',
+                            driver: values[5] ? String(values[5]) : '',
+                            from: values[6] ? String(values[6]) : '',
+                            to: values[7] ? String(values[7]) : '',
+                            material: values[8] ? String(values[8]) : '',
+                            tons: tons,
+                            rate: rate,
+                            totalFreight: freight,
+                            advance: advance,
+                            balance: balance,
+                            status: values[14] ? String(values[14]) : (balance === 0 ? 'Paid' : 'Unpaid')
+                        });
+                    }
+                });
+
+                const importedTable = {
+                    id: 'tbl_' + Date.now(),
+                    name: tableName,
+                    desc: 'Imported from Excel file',
+                    entries: newEntries
+                };
+
+                tables.push(importedTable);
+                saveUserTables();
+                alert(`Successfully imported table "${tableName}" with ${newEntries.length} entries!`);
+                event.target.value = ''; // Reset file input
+            } catch (err) {
+                alert("Error importing Excel file: " + err.message);
+            }
+        }
+
+        /* --- SINGLE TABLE ENTRIES MANAGEMENT --- */
+        function openTable(id) {
+            activeTableId = id;
+            const currentTable = tables.find(t => t.id === activeTableId);
+            if (!currentTable) return;
+
+            document.getElementById('currentTableName').innerText = currentTable.name;
+            document.getElementById('currentTableCount').innerText = currentTable.entries.length;
+
+            document.getElementById('homeScreenSection').classList.add('hidden');
+            document.getElementById('tableDetailSection').classList.remove('hidden');
+
+            clearSearchFilters();
+            renderTableEntries();
+        }
+
+        function clearSearchFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'ALL';
+            renderTableEntries();
+        }
+
+        function renderTableEntries() {
+            const currentTable = tables.find(t => t.id === activeTableId);
+            const tbody = document.getElementById('tableBody');
+            if (!currentTable || currentTable.entries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="text-center p-8 text-slate-500">No entries in this table. Click "Add Entry" to add one.</td></tr>`;
+                return;
+            }
+
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filteredEntries = currentTable.entries.filter(r => {
+                const matchesSearch = 
+                    (r.id && r.id.toLowerCase().includes(query)) ||
+                    (r.party && r.party.toLowerCase().includes(query)) ||
+                    (r.vehicle && r.vehicle.toLowerCase().includes(query)) ||
+                    (r.driver && r.driver.toLowerCase().includes(query)) ||
+                    (r.material && r.material.toLowerCase().includes(query)) ||
+                    (r.from && r.from.toLowerCase().includes(query)) ||
+                    (r.to && r.to.toLowerCase().includes(query));
+
+                const matchesStatus = (statusFilter === 'ALL') || (r.status === statusFilter);
+
+                return matchesSearch && matchesStatus;
+            });
+
+            if (filteredEntries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="text-center p-8 text-slate-500">No matching entries found for your search/filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredEntries.map(r => `
+                <tr class="hover:bg-slate-900/50 transition border-b border-slate-800/60">
+                    <td class="p-3.5 font-mono font-bold text-orange-400">${r.id}</td>
+                    <td class="p-3.5 whitespace-nowrap">${r.date}</td>
+                    <td class="p-3.5 font-bold text-white">${r.party}</td>
+                    <td class="p-3.5 font-mono text-slate-300">${r.vehicle}</td>
+                    <td class="p-3.5">${r.driver || '-'}</td>
+                    <td class="p-3.5 text-slate-400">${r.from || ''} → ${r.to || ''}</td>
+                    <td class="p-3.5 text-right font-medium">${r.tons}</td>
+                    <td class="p-3.5 text-right">₹${Number(r.rate).toLocaleString('en-IN')}</td>
+                    <td class="p-3.5 text-right font-bold text-orange-400">₹${Number(r.totalFreight).toLocaleString('en-IN')}</td>
+                    <td class="p-3.5 text-right text-indigo-400">₹${Number(r.advance).toLocaleString('en-IN')}</td>
+                    <td class="p-3.5 text-right font-bold text-rose-400">₹${Number(r.balance).toLocaleString('en-IN')}</td>
+                    <td class="p-3.5 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            r.status === 'Paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
+                            r.status === 'Partial' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                        }">${r.status}</span>
+                    </td>
+                    <td class="p-3.5 text-center space-x-2">
+                        <button onclick="editRecord('${r.id}')" class="text-blue-400 hover:text-blue-300 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteRecord('${r.id}')" class="text-rose-500 hover:text-rose-400 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        /* --- FORM ENTRY MODAL --- */
+        function calculateTotals() {
+            const tons = parseFloat(document.getElementById('formTons').value) || 0;
+            const rate = parseFloat(document.getElementById('formRate').value) || 0;
+            const advance = parseFloat(document.getElementById('formAdvance').value) || 0;
+
+            const totalFreight = Math.round(tons * rate);
+            const balance = Math.round(totalFreight - advance);
+
+            document.getElementById('formTotalFreight').value = totalFreight;
+            document.getElementById('formBalance').value = balance;
+        }
+
+        function openFormModal(editId = null) {
+            document.getElementById('tripForm').reset();
+            const currentTable = tables.find(t => t.id === activeTableId);
+
+            if (editId) {
+                const rec = currentTable.entries.find(r => r.id === editId);
+                if (rec) {
+                    document.getElementById('editRecordId').value = rec.id;
+                    document.getElementById('formLrNo').value = rec.id;
+                    document.getElementById('formDate').value = rec.date;
+                    document.getElementById('formParty').value = rec.party;
+                    document.getElementById('formVehicle').value = rec.vehicle;
+                    document.getElementById('formDriver').value = rec.driver || '';
+                    document.getElementById('formMaterial').value = rec.material || '';
+                    document.getElementById('formFrom').value = rec.from || '';
+                    document.getElementById('formTo').value = rec.to || '';
+                    document.getElementById('formTons').value = rec.tons;
+                    document.getElementById('formRate').value = rec.rate;
+                    document.getElementById('formTotalFreight').value = rec.totalFreight;
+                    document.getElementById('formAdvance').value = rec.advance;
+                    document.getElementById('formBalance').value = rec.balance;
+                    document.getElementById('formStatus').value = rec.status;
+                    document.getElementById('formTitle').innerText = 'Edit Form Entry';
+                }
+            } else {
+                const nextId = currentTable.entries.length > 0 ? Math.max(...currentTable.entries.map(r => parseInt(String(r.id).replace('LR-', '')) || 1000)) + 1 : 1001;
+                document.getElementById('editRecordId').value = '';
+                document.getElementById('formLrNo').value = `LR-${nextId}`;
+                document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('formTitle').innerText = 'Add Form Entry';
+            }
+            document.getElementById('formModal').classList.remove('hidden');
+            document.getElementById('formModal').classList.add('flex');
+        }
+
+        function closeFormModal() {
+            document.getElementById('formModal').classList.add('hidden');
+            document.getElementById('formModal').classList.remove('flex');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const currentTable = tables.find(t => t.id === activeTableId);
+            if (!currentTable) return;
+
+            const editId = document.getElementById('editRecordId').value;
+            const payload = {
+                id: document.getElementById('formLrNo').value,
+                date: document.getElementById('formDate').value,
+                party: document.getElementById('formParty').value,
+                vehicle: document.getElementById('formVehicle').value,
+                driver: document.getElementById('formDriver').value,
+                material: document.getElementById('formMaterial').value,
+                from: document.getElementById('formFrom').value,
+                to: document.getElementById('formTo').value,
+                tons: parseFloat(document.getElementById('formTons').value) || 0,
+                rate: parseFloat(document.getElementById('formRate').value) || 0,
+                totalFreight: parseFloat(document.getElementById('formTotalFreight').value) || 0,
+                advance: parseFloat(document.getElementById('formAdvance').value) || 0,
+                balance: parseFloat(document.getElementById('formBalance').value) || 0,
+                status: document.getElementById('formStatus').value
+            };
+
+            if (editId) {
+                const idx = currentTable.entries.findIndex(r => r.id === editId);
+                if (idx !== -1) currentTable.entries[idx] = payload;
+            } else {
+                currentTable.entries.unshift(payload);
+            }
+
+            saveUserTables();
+            closeFormModal();
+            openTable(activeTableId);
+        }
+
+        function editRecord(id) { openFormModal(id); }
+
+        function deleteRecord(id) {
+            if (confirm(`Delete record ${id}?`)) {
+                const currentTable = tables.find(t => t.id === activeTableId);
+                currentTable.entries = currentTable.entries.filter(r => r.id !== id);
+                saveUserTables();
+                openTable(activeTableId);
+            }
+        }
+
+        /* --- EXCEL EXPORT WITH BOLD HEADINGS (ExcelJS) --- */
+        async function exportToExcel() {
+            const currentTable = tables.find(t => t.id === activeTableId);
+            if (!currentTable || currentTable.entries.length === 0) return alert('No entries to export.');
+
+            const workbook = new ExcelJS.Workbook();
+            const safeSheetName = (currentTable.name || "TableData").replace(/[\\/?*:[\]]/g, '').substring(0, 30);
+            const worksheet = workbook.addWorksheet(safeSheetName);
+
+            worksheet.columns = [
+                { header: 'LR Number', key: 'id', width: 15 },
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Party Name', key: 'party', width: 22 },
+                { header: 'Vehicle Number', key: 'vehicle', width: 18 },
+                { header: 'Driver', key: 'driver', width: 18 },
+                { header: 'From', key: 'from', width: 16 },
+                { header: 'To', key: 'to', width: 16 },
+                { header: 'Material', key: 'material', width: 18 },
+                { header: 'Weight (MT)', key: 'tons', width: 14 },
+                { header: 'Rate (INR)', key: 'rate', width: 14 },
+                { header: 'Total Freight (INR)', key: 'totalFreight', width: 20 },
+                { header: 'Advance (INR)', key: 'advance', width: 16 },
+                { header: 'Balance Due (INR)', key: 'balance', width: 18 },
+                { header: 'Payment Status', key: 'status', width: 16 }
+            ];
+
+            const headerRow = worksheet.getRow(1);
+            headerRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+            headerRow.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF1E293B' }
+            };
+            headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+            headerRow.height = 24;
+
+            currentTable.entries.forEach(r => {
+                worksheet.addRow({
+                    id: r.id || '',
+                    date: r.date || '',
+                    party: r.party || '',
+                    vehicle: r.vehicle || '',
+                    driver: r.driver || '',
+                    from: r.from || '',
+                    to: r.to || '',
+                    material: r.material || '',
+                    tons: Number(r.tons) || 0,
+                    rate: Number(r.rate) || 0,
+                    totalFreight: Number(r.totalFreight) || 0,
+                    advance: Number(r.advance) || 0,
+                    balance: Number(r.balance) || 0,
+                    status: r.status || ''
+                });
+            });
+
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.alignment = { vertical: 'middle', horizontal: 'left' };
+                }
+            });
+
+            const cleanFileName = (currentTable.name || "Export").replace(/[^a-zA-Z0-9_\-]/g, '_');
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `${cleanFileName}_${Date.now()}.xlsx`);
+        }
+    </script>
+</body>
+</html>
